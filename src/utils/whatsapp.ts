@@ -1,14 +1,7 @@
 import { Order, Product, CustomCutInquiry } from '../types';
 import { COMPANY_INFO } from '../data/companyInfo';
-
-export function formatBDT(amount: number): string {
-  return new Intl.NumberFormat('en-BD', {
-    style: 'currency',
-    currency: 'BDT',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount).replace('BDT', '৳');
-}
+import { formatBDT } from './formatters';
+export { formatBDT };
 
 export function generateOrderNumber(): string {
   const year = 2026;

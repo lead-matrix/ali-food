@@ -1,6 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Product, Order, OrderStatus } from '../types';
 import { INITIAL_PRODUCTS } from '../data/initialProducts';
+import { COMPANY_INFO } from '../data/companyInfo';
+import { adminAuth } from '../utils/adminAuth';
+import { getRepo, IRepository } from '../lib/db/repository';
+import { AppSettings, Client, Delivery, Invoice, Payment, Complaint } from '../lib/db/types';
 
 interface AdminSettings {
   primaryHotline: string;
@@ -12,11 +16,12 @@ interface AdminSettings {
 }
 
 interface AdminContextType {
+  // Legacy compatibility fields
   products: Product[];
   orders: Order[];
   settings: AdminSettings;
   isAdminLoggedIn: boolean;
-  loginAdmin: (passcode: string) => boolean;
+  loginAdmin: (passcode: string) => Promise<boolean>;
   logoutAdmin: () => void;
   updateProductRate: (productId: string, newRate: number) => void;
   toggleProductPriceVisibility: (productId: string) => void;
@@ -26,117 +31,39 @@ interface AdminContextType {
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   updateSettings: (newSettings: Partial<AdminSettings>) => void;
+
+  // New Super-Admin SaaS state & helpers
+  repo: IRepository;
+  isLocalMode: boolean;
+  refreshKey: number;
+  triggerRefresh: () => void;
+  impersonatedClientId: string | null;
+  setImpersonatedClientId: (id: string | null) => void;
 }
 
-const PRODUCTS_STORAGE_KEY = 'alifood_products_v1';
-const ORDERS_STORAGE_KEY = 'alifood_orders_v1';
-const SETTINGS_STORAGE_KEY = 'alifood_settings_v1';
-const ADMIN_AUTH_KEY = 'alifood_admin_session';
-
-const INITIAL_SAMPLE_ORDERS: Order[] = [
-  {
-    id: "ord-sample-1",
-    orderNumber: "AF-2026-000142",
-    customerName: "Habibul Alom Ridoy",
-    companyName: "Aribah's Kitchen",
-    customerType: "Catering",
-    phone: "01817-000000",
-    whatsapp: "01817-000000",
-    email: "procurement@aribahskitchen.com",
-    deliveryCity: "Dhaka",
-    deliveryArea: "Tejgaon / West Nakhalpara",
-    deliveryAddress: "273/3 West Nakhalpara, Tejgaon, Dhaka-1215",
-    preferredDate: "2026-09-22",
-    preferredTimeSlot: "5:00 AM - 8:00 AM (Pre-dawn Route)",
-    specialInstructions: "100% skinless breast fillets, vacuum packed in 5kg master bags for catering line.",
-    items: [
-      {
-        productId: "prod-broiler-breast-boneless",
-        productName: "Broiler Breast Meat (Boneless)",
-        quantity: 50,
-        unit: "Kg",
-        unitPrice: 420,
-        priceVisible: true,
-        subtotal: 21000,
-        customNotes: "Zero fat trim, chilled"
-      },
-      {
-        productId: "prod-broiler-drumstick-skinless",
-        productName: "Broiler Drum Stick (Skinless)",
-        quantity: 40,
-        unit: "Kg",
-        unitPrice: 330,
-        priceVisible: true,
-        subtotal: 13200,
-        customNotes: "Cleaned and descaled"
-      }
-    ],
-    estimatedTotal: 34200,
-    hasQuoteItems: false,
-    status: "Processing",
-    createdAt: "2026-09-19T06:30:00Z",
-    updatedAt: "2026-09-19T07:15:00Z"
-  },
-  {
-    id: "ord-sample-2",
-    orderNumber: "AF-2026-000143",
-    customerName: "Md Tanjil Hossain",
-    companyName: "SHWAPNO (Chattogram)",
-    customerType: "Supermarket",
-    phone: "01700-000000",
-    whatsapp: "01700-000000",
-    email: "procurement.ctg@shwapno.com",
-    deliveryCity: "Chattogram",
-    deliveryArea: "Khulshi / Agrabad",
-    deliveryAddress: "Zakir Hossain Road, North Khulshi, Chattogram",
-    preferredDate: "2026-09-21",
-    preferredTimeSlot: "5:00 AM - 8:00 AM (Pre-dawn Route)",
-    specialInstructions: "Commercial wholesale batch for retail chiller displays with temp logs.",
-    items: [
-      {
-        productId: "prod-broiler-skinless",
-        productName: "Broiler (Skinless)",
-        quantity: 120,
-        unit: "Kg",
-        unitPrice: 245,
-        priceVisible: true,
-        subtotal: 29400,
-        customNotes: "Standard 8-way curry cut"
-      },
-      {
-        productId: "prod-sonalika-chicken",
-        productName: "Sonalika Chicken (Dressed)",
-        quantity: 60,
-        unit: "Kg",
-        unitPrice: 340,
-        priceVisible: true,
-        subtotal: 20400,
-        customNotes: "Sorted 900g-1kg each"
-      }
-    ],
-    estimatedTotal: 49800,
-    hasQuoteItems: false,
-    status: "Confirmed",
-    createdAt: "2026-09-19T14:10:00Z",
-    updatedAt: "2026-09-19T15:00:00Z"
-  }
-];
-
 const DEFAULT_SETTINGS: AdminSettings = {
-  primaryHotline: "01319-345501",
-  secondaryHotline: "01401-238019",
-  officialEmail: "alifood3193@gmail.com",
-  adminNotificationEmail: "alifood3193@gmail.com",
-  announcementText: "Commercial pre-dawn delivery routes (5:00 AM–8:00 AM) active daily across Dhaka & Chattogram hubs.",
-  isAnnouncementActive: true
+  primaryHotline: COMPANY_INFO.hotlines[0].number,
+  secondaryHotline: COMPANY_INFO.hotlines[1].number,
+  officialEmail: COMPANY_INFO.email,
+  adminNotificationEmail: COMPANY_INFO.email,
+  announcementText: 'Commercial pre-dawn delivery routes (5:00 AM–8:00 AM) active daily across Dhaka & Chattogram hubs.',
+  isAnnouncementActive: true,
 };
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
+    return adminAuth.isAuthenticated();
+  });
+
+  const [refreshKey, setRefreshKey] = useState(0);
+  const triggerRefresh = useCallback(() => setRefreshKey(k => k + 1), []);
+  const [impersonatedClientId, setImpersonatedClientId] = useState<string | null>(null);
+
   const [products, setProducts] = useState<Product[]>(() => {
     try {
-      const saved = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+      const saved = localStorage.getItem('alifood_products_v1');
       return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
     } catch {
       return INITIAL_PRODUCTS;
@@ -145,93 +72,93 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
-      const saved = localStorage.getItem(ORDERS_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : INITIAL_SAMPLE_ORDERS;
+      const saved = localStorage.getItem('alifood_orders_v1');
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return INITIAL_SAMPLE_ORDERS;
+      return [];
     }
   });
 
   const [settings, setSettings] = useState<AdminSettings>(() => {
     try {
-      const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      const saved = localStorage.getItem('alifood_settings_v1');
       return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
     } catch {
       return DEFAULT_SETTINGS;
     }
   });
 
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
-
+  // Track session activity and 30-min timeout
   useEffect(() => {
-    try {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [products]);
+    const handleUserActivity = () => {
+      if (isAdminLoggedIn) {
+        adminAuth.touchActivity();
+      }
+    };
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [orders]);
+    window.addEventListener('click', handleUserActivity);
+    window.addEventListener('keydown', handleUserActivity);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [settings]);
+    const interval = setInterval(() => {
+      if (isAdminLoggedIn && !adminAuth.isAuthenticated()) {
+        setIsAdminLoggedIn(false);
+      }
+    }, 60000); // Check every minute
 
-  const loginAdmin = (passcode: string): boolean => {
-    // Default passcodes for demonstration / operational administration
-    if (passcode.trim() === 'alifood2026' || passcode.trim() === 'admin123') {
+    return () => {
+      window.removeEventListener('click', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      clearInterval(interval);
+    };
+  }, [isAdminLoggedIn]);
+
+  const loginAdmin = async (passcode: string): Promise<boolean> => {
+    // Zero hardcoded passwords! Uses Web Crypto verification
+    const success = await adminAuth.verifyLocalPassword(passcode);
+    if (success) {
       setIsAdminLoggedIn(true);
-      localStorage.setItem(ADMIN_AUTH_KEY, 'true');
       return true;
     }
     return false;
   };
 
   const logoutAdmin = () => {
+    adminAuth.logout();
     setIsAdminLoggedIn(false);
-    localStorage.removeItem(ADMIN_AUTH_KEY);
+    setImpersonatedClientId(null);
   };
 
   const updateProductRate = (productId: string, newRate: number) => {
-    setProducts(prev =>
-      prev.map(p => (p.id === productId ? { ...p, rate: newRate } : p))
-    );
+    setProducts(prev => prev.map(p => (p.id === productId ? { ...p, rate: newRate } : p)));
+    getRepo().saveProduct({ id: productId, rate: newRate });
   };
 
   const toggleProductPriceVisibility = (productId: string) => {
-    setProducts(prev =>
-      prev.map(p => (p.id === productId ? { ...p, priceVisible: !p.priceVisible } : p))
-    );
+    setProducts(prev => {
+      const updated = prev.map(p => (p.id === productId ? { ...p, priceVisible: !p.priceVisible } : p));
+      const target = updated.find(p => p.id === productId);
+      if (target) getRepo().saveProduct({ id: productId, priceVisible: target.priceVisible });
+      return updated;
+    });
   };
 
   const toggleProductActive = (productId: string) => {
-    setProducts(prev =>
-      prev.map(p => (p.id === productId ? { ...p, active: !p.active } : p))
-    );
+    setProducts(prev => {
+      const updated = prev.map(p => (p.id === productId ? { ...p, active: !p.active } : p));
+      const target = updated.find(p => p.id === productId);
+      if (target) getRepo().saveProduct({ id: productId, active: target.active });
+      return updated;
+    });
   };
 
   const updateProduct = (updated: Product) => {
     setProducts(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+    getRepo().saveProduct(updated);
   };
 
   const addProduct = (product: Product) => {
     setProducts(prev => [product, ...prev]);
+    getRepo().saveProduct(product);
   };
 
   const addOrder = (order: Order) => {
@@ -240,17 +167,16 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
     setOrders(prev =>
-      prev.map(o =>
-        o.id === orderId
-          ? { ...o, status, updatedAt: new Date().toISOString() }
-          : o
-      )
+      prev.map(o => (o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o))
     );
   };
 
   const updateSettings = (newSettings: Partial<AdminSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   };
+
+  const repo = getRepo();
+  const isLocalMode = repo.mode === 'local';
 
   return (
     <AdminContext.Provider
@@ -268,7 +194,13 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addProduct,
         addOrder,
         updateOrderStatus,
-        updateSettings
+        updateSettings,
+        repo,
+        isLocalMode,
+        refreshKey,
+        triggerRefresh,
+        impersonatedClientId,
+        setImpersonatedClientId,
       }}
     >
       {children}

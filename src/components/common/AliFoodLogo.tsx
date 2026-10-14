@@ -16,8 +16,11 @@ export const AliFoodLogo: React.FC<LogoProps> = ({
     return (
       <div className={`flex items-center select-none ${className}`}>
         <img
-          src="/images/alifood-emblem.png"
-          alt="M/S Ali Food — Your Trusted Meat Source"
+          src="/images/alifood-emblem.svg"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = '/images/alifood-emblem.png';
+          }}
+          alt="M/S Ali Food Emblem"
           className="h-12 md:h-14 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform"
         />
       </div>
@@ -29,7 +32,10 @@ export const AliFoodLogo: React.FC<LogoProps> = ({
     return (
       <div className={`flex items-center select-none ${className}`}>
         <img
-          src="/images/alifood-clean-banner.png"
+          src="/images/alifood-logo.svg"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = '/images/alifood-logo.png';
+          }}
           alt="M/S Ali Food — Your Trusted Meat Source"
           className="h-11 sm:h-12 md:h-14 w-auto object-contain drop-shadow-md rounded"
         />
@@ -37,9 +43,6 @@ export const AliFoodLogo: React.FC<LogoProps> = ({
     );
   }
 
-  // Default corporate logo:
-  // On desktop / wide viewports: uses the official clean header banner
-  // With responsive fallback to emblem + wordmark on tight mobile viewports
   const isLight = variant === 'light';
 
   return (
@@ -47,18 +50,26 @@ export const AliFoodLogo: React.FC<LogoProps> = ({
       {/* Official Header Banner for tablet & desktop */}
       <div className="hidden sm:block">
         <img
-          src="/images/alifood-clean-banner.png"
+          src={isLight ? '/images/alifood-logo-white-bg.png' : '/images/alifood-logo.svg'}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = isLight
+              ? '/images/alifood-logo-white-bg.png'
+              : '/images/alifood-logo.png';
+          }}
           alt="M/S Ali Food — Your Trusted Meat Source"
-          className="h-12 md:h-14 w-auto object-contain drop-shadow-sm rounded"
+          className="h-12 md:h-13 w-auto object-contain drop-shadow-sm rounded"
         />
       </div>
 
       {/* Responsive mobile emblem + typography (prevents banner squishing on small phones) */}
       <div className="flex sm:hidden items-center gap-2.5">
         <img
-          src="/images/alifood-emblem.png"
+          src="/images/alifood-emblem.svg"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = '/images/alifood-emblem.png';
+          }}
           alt="M/S Ali Food"
-          className="w-11 h-11 object-contain drop-shadow flex-shrink-0"
+          className="w-10 h-10 object-contain drop-shadow flex-shrink-0"
         />
         <div className="flex flex-col justify-center">
           <div className="flex items-baseline gap-1">

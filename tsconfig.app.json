@@ -21,5 +21,6 @@
     "noUnusedParameters": false,
     "erasableSyntaxOnly": false,
   },
-  "include": ["src", "src/**/*"]
+  "include": ["src", "src/**/*"],
+  "exclude": ["src/_archive/**"]
 }

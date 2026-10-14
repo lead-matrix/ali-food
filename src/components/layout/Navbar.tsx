@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Phone, MessageSquare, ShoppingBag, Menu, X, ShieldCheck, Clock, Lock } from 'lucide-react';
+import { Phone, MessageSquare, Menu, X, ShieldCheck, Clock, Lock, UserCheck } from 'lucide-react';
 import { AliFoodLogo } from '../common/AliFoodLogo';
-import { useCart } from '../../context/CartContext';
-import { useAdmin } from '../../context/AdminContext';
 import { COMPANY_INFO } from '../../data/companyInfo';
 import { createGeneralWhatsAppLink } from '../../utils/whatsapp';
+import { t } from '../../i18n';
 
 interface NavbarProps {
   currentPath: string;
@@ -12,18 +11,13 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
-  const { totalItemCount } = useCart();
-  const { settings, isAdminLoggedIn } = useAdmin();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { label: 'Home', path: '/' },
-    { label: 'Products & Cuts', path: '/products' },
-    { label: 'Supply Capabilities', path: '/supply' },
-    { label: 'Supply Partners', path: '/partners' },
-    { label: 'About Us', path: '/about' },
-    { label: 'FAQ', path: '/faq' },
-    { label: 'Contact', path: '/contact' },
+    { label: t.nav.home, path: '/' },
+    { label: t.nav.whatWeSupply, path: '/products' },
+    { label: t.nav.about, path: '/about' },
+    { label: t.nav.contact, path: '/contact' },
   ];
 
   const handleNav = (path: string) => {
@@ -41,15 +35,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
           <div className="flex items-center gap-4">
             <span className="inline-flex items-center gap-1.5 text-[#F5A623] font-semibold tracking-wide">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Institutional Poultry & Meat Partner
+              Institutional Poultry & Wholesale Meat Supplier
             </span>
             <span className="hidden md:inline-flex items-center gap-1 text-slate-400">
-              <Clock className="w-3 h-3 text-[#1A7A3C]" style={{ color: '#38B265' }} />
+              <Clock className="w-3 h-3 text-[#38B265]" />
               Pre-dawn Express Routes (5:00 AM–8:00 AM)
             </span>
           </div>
 
-          {/* Right hotlines */}
+          {/* Right hotlines & admin */}
           <div className="flex items-center gap-4 text-slate-300">
             <div className="hidden sm:flex items-center gap-3">
               <span className="text-slate-400">Dhaka & Chattogram:</span>
@@ -57,39 +51,39 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                 href={`tel:${COMPANY_INFO.hotlines[0].raw}`}
                 className="hover:text-[#F5A623] font-mono transition-colors font-semibold"
               >
-                {settings.primaryHotline}
+                {COMPANY_INFO.hotlines[0].number}
               </a>
               <span className="text-slate-600">|</span>
               <a
                 href={`tel:${COMPANY_INFO.hotlines[1].raw}`}
                 className="hover:text-[#F5A623] font-mono transition-colors font-semibold"
               >
-                {settings.secondaryHotline}
+                {COMPANY_INFO.hotlines[1].number}
               </a>
             </div>
-            
+
             <a
               href={createGeneralWhatsAppLink()}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 font-semibold text-xs transition-colors"
-              style={{ color: '#38B265' }}
+              className="inline-flex items-center gap-1 font-semibold text-xs transition-colors text-[#38B265] hover:text-emerald-400"
             >
               <MessageSquare className="w-3.5 h-3.5" />
               WhatsApp
             </a>
 
+            {/* Small Admin Link */}
             <button
               onClick={() => handleNav('/admin')}
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] transition-colors ${
-                isAdminLoggedIn
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                currentPath.startsWith('/admin')
                   ? 'bg-[#F5A623]/20 text-[#F5A623] border border-[#F5A623]/40'
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="Private Administration Portal"
+              title="Super-Admin Console"
             >
               <Lock className="w-3 h-3" />
-              {isAdminLoggedIn ? 'Admin Active' : 'Admin'}
+              <span>Admin</span>
             </button>
           </div>
         </div>
@@ -107,25 +101,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
           </div>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-6">
-            {navLinks.map(link => {
+          <nav className="hidden lg:flex items-center gap-8">
+            {navLinks.map((link) => {
               const isActive = currentPath === link.path;
               return (
                 <button
                   key={link.path}
                   onClick={() => handleNav(link.path)}
                   className={`text-sm font-semibold transition-all py-1 relative ${
-                    isActive
-                      ? 'font-bold'
-                      : 'text-slate-300 hover:text-white'
+                    isActive ? 'font-bold text-[#F5A623]' : 'text-slate-300 hover:text-white'
                   }`}
-                  style={isActive ? { color: '#F5A623' } : {}}
                 >
                   {link.label}
                   {isActive && (
                     <span
-                      className="absolute bottom-0 left-0 w-full h-0.5 rounded-full"
-                      style={{ background: '#F5A623' }}
+                      className="absolute bottom-0 left-0 w-full h-0.5 rounded-full bg-[#F5A623]"
                     />
                   )}
                 </button>
@@ -133,55 +123,37 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             })}
           </nav>
 
-          {/* Right Action CTAs */}
+          {/* Right Action CTAs: Direct Call & Client Login */}
           <div className="hidden sm:flex items-center gap-3">
             <a
               href={`tel:${COMPANY_INFO.hotlines[0].raw}`}
               className="hidden xl:inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#2A0A0A] hover:bg-[#3D1212] text-slate-200 border border-[#4A1515] text-xs font-semibold tracking-wide transition-all shadow-sm"
             >
-              <Phone className="w-3.5 h-3.5" style={{ color: '#F5A623' }} />
+              <Phone className="w-3.5 h-3.5 text-[#F5A623]" />
               <span>Direct Hotline</span>
             </a>
 
             <button
-              onClick={() => handleNav('/order')}
-              className="relative inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg font-bold text-sm tracking-wide shadow-md transition-all active:scale-95"
-              style={{
-                background: 'linear-gradient(135deg, #F5A623 0%, #E8940D 100%)',
-                color: '#1C0808',
-                boxShadow: '0 4px 14px rgba(245,166,35,0.25)',
-              }}
+              onClick={() => handleNav('/client')}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 ${
+                currentPath.startsWith('/client')
+                  ? 'bg-amber-500 text-slate-950 shadow-amber-500/20'
+                  : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950'
+              }`}
             >
-              <ShoppingBag className="w-4 h-4" style={{ color: '#1C0808' }} />
-              <span>Request Supply</span>
-              {totalItemCount > 0 && (
-                <span
-                  className="flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-black text-white rounded-full shadow-inner animate-pulse"
-                  style={{ background: '#1C0808' }}
-                >
-                  {totalItemCount}
-                </span>
-              )}
+              <UserCheck className="w-4 h-4" />
+              <span>Client Login</span>
             </button>
           </div>
 
-          {/* Mobile Menu Toggle & Cart Icon */}
+          {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 lg:hidden">
             <button
-              onClick={() => handleNav('/order')}
-              className="relative p-2 rounded-lg border text-[#F5A623]"
-              style={{ background: '#2A0A0A', borderColor: '#4A1515' }}
-              aria-label="Order Cart"
+              onClick={() => handleNav('/client')}
+              className="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs uppercase flex items-center gap-1.5"
             >
-              <ShoppingBag className="w-5 h-5" />
-              {totalItemCount > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center"
-                  style={{ background: '#F5A623', color: '#1C0808' }}
-                >
-                  {totalItemCount}
-                </span>
-              )}
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>Client Portal</span>
             </button>
 
             <button
@@ -203,66 +175,60 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
           style={{ background: '#1C0808', borderColor: '#3D1010' }}
         >
           <div className="flex flex-col space-y-1">
-            {navLinks.map(link => {
+            {navLinks.map((link) => {
               const isActive = currentPath === link.path;
               return (
                 <button
                   key={link.path}
                   onClick={() => handleNav(link.path)}
                   className={`text-left px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                    isActive
-                      ? 'border-l-4'
-                      : 'text-slate-300 hover:text-white'
+                    isActive ? 'border-l-4 bg-[#2A0A0A] text-[#F5A623] border-[#F5A623]' : 'text-slate-300 hover:text-white'
                   }`}
-                  style={isActive ? {
-                    background: '#2A0A0A',
-                    color: '#F5A623',
-                    borderLeftColor: '#F5A623',
-                  } : {}}
                 >
                   {link.label}
                 </button>
               );
             })}
+            
+            <button
+              onClick={() => handleNav('/client')}
+              className="text-left px-3 py-2.5 rounded-lg text-sm font-semibold text-amber-400 hover:text-amber-300 flex items-center justify-between"
+            >
+              <span className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4" />
+                Client Portal Login
+              </span>
+            </button>
+
             <button
               onClick={() => handleNav('/admin')}
-              className="text-left px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white flex items-center justify-between"
-              style={{ background: 'transparent' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#2A0A0A')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              className="text-left px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-between"
             >
-              <span>Administration Portal</span>
-              <Lock className="w-3.5 h-3.5" />
+              <span className="flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Super-Admin Console
+              </span>
             </button>
           </div>
 
           <div className="pt-3 border-t flex flex-col gap-2" style={{ borderColor: '#3D1010' }}>
-            <button
-              onClick={() => handleNav('/order')}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-sm tracking-wide shadow"
-              style={{ background: '#F5A623', color: '#1C0808' }}
-            >
-              <ShoppingBag className="w-4 h-4" />
-              <span>Order / Request Supply ({totalItemCount} Items)</span>
-            </button>
-
             <div className="grid grid-cols-2 gap-2 pt-1">
               <a
                 href={`tel:${COMPANY_INFO.hotlines[0].raw}`}
                 className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg border text-xs font-semibold text-slate-200"
                 style={{ background: '#2A0A0A', borderColor: '#4A1515' }}
               >
-                <Phone className="w-3.5 h-3.5" style={{ color: '#F5A623' }} />
+                <Phone className="w-3.5 h-3.5 text-[#F5A623]" />
                 Call Hotline
               </a>
               <a
                 href={createGeneralWhatsAppLink()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg border text-xs font-semibold"
-                style={{ background: '#0A2A12', borderColor: '#1A5A2A', color: '#38B265' }}
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg border text-xs font-semibold text-[#38B265]"
+                style={{ background: '#0A2A12', borderColor: '#1A5A2A' }}
               >
-                <MessageSquare className="w-3.5 h-3.5" style={{ color: '#38B265' }} />
+                <MessageSquare className="w-3.5 h-3.5" />
                 WhatsApp
               </a>
             </div>

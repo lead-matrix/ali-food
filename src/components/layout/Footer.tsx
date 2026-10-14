@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Mail, MapPin, ShieldCheck, ArrowRight, Clock, Award } from 'lucide-react';
+import { Phone, Mail, MapPin, ShieldCheck, MessageSquare, Clock, UserCheck } from 'lucide-react';
 import { AliFoodLogo } from '../common/AliFoodLogo';
 import { COMPANY_INFO } from '../../data/companyInfo';
 import { createGeneralWhatsAppLink } from '../../utils/whatsapp';
@@ -16,28 +16,29 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left space-y-1">
             <h3 className="text-xl font-bold text-white tracking-tight">
-              Ready to streamline your institutional meat supply?
+              Institutional Wholesale Poultry & Dressed Cuts Supply
             </h3>
             <p className="text-slate-400 text-sm">
-              Daily scheduled deliveries, custom culinary cuts, and guaranteed cold-chain integrity across Dhaka & Chattogram.
+              Daily pre-dawn scheduled deliveries, custom culinary cuts, and guaranteed cold-chain integrity across Dhaka & Chattogram.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => navigate('/order')}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm tracking-wide shadow-lg transition-all"
-            >
-              <span>Submit Supply Request</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
             <a
               href={createGeneralWhatsAppLink()}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-slate-800 hover:bg-slate-750 text-emerald-400 border border-emerald-900/60 font-semibold text-sm transition-all"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg"
             >
-              <span>WhatsApp Inquiries</span>
+              <MessageSquare className="w-4 h-4" />
+              <span>Inquire via WhatsApp</span>
             </a>
+            <button
+              onClick={() => navigate('/client')}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Client Portal</span>
+            </button>
           </div>
         </div>
       </div>
@@ -49,7 +50,7 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
           <div className="lg:col-span-4 space-y-4">
             <AliFoodLogo variant="dark" />
             <p className="text-xs leading-relaxed text-slate-400 pt-2">
-              <strong className="text-slate-200">M/S ALI FOOD</strong> is a premier commercial agro-meat processor, institutional poultry manufacturer, and wholesale meat distributor in Bangladesh. Operating with bio-secure contract farming, temperature-controlled butchery, customized culinary portioning, and express cold-chain logistics.
+              <strong className="text-slate-200">M/S ALI FOOD</strong> is a premier commercial agro-meat processor and wholesale institutional meat distributor in Bangladesh. Operating with bio-secure contract sourcing, hygienic manual butchery, portion-controlled dressed cuts, and dedicated pre-dawn cold-chain logistics.
             </p>
             <div className="pt-2 flex items-center gap-2 text-xs text-amber-400 font-semibold">
               <ShieldCheck className="w-4 h-4" />
@@ -61,7 +62,7 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
             </div>
           </div>
 
-          {/* Col 2: Quick Links (2 cols) */}
+          {/* Col 2: Navigation Links (2 cols) */}
           <div className="lg:col-span-2 space-y-3">
             <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
               Navigation
@@ -80,31 +81,7 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
                   onClick={() => navigate('/products')}
                   className="hover:text-amber-400 transition-colors"
                 >
-                  Products & Catalog
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => navigate('/order')}
-                  className="hover:text-amber-400 transition-colors"
-                >
-                  Order / Request Supply
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => navigate('/supply')}
-                  className="hover:text-amber-400 transition-colors"
-                >
-                  Supply Capabilities
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => navigate('/partners')}
-                  className="hover:text-amber-400 transition-colors"
-                >
-                  Selected Partners
+                  What We Supply
                 </button>
               </li>
               <li>
@@ -112,15 +89,7 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
                   onClick={() => navigate('/about')}
                   className="hover:text-amber-400 transition-colors"
                 >
-                  Corporate Profile
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => navigate('/faq')}
-                  className="hover:text-amber-400 transition-colors"
-                >
-                  Wholesale FAQ
+                  About Us
                 </button>
               </li>
               <li>
@@ -129,6 +98,22 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
                   className="hover:text-amber-400 transition-colors"
                 >
                   Contact & Hubs
+                </button>
+              </li>
+              <li className="pt-2">
+                <button
+                  onClick={() => navigate('/client')}
+                  className="text-amber-400 font-semibold hover:underline"
+                >
+                  Client Portal
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  Super-Admin Portal
                 </button>
               </li>
             </ul>
@@ -190,10 +175,10 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
           </div>
         </div>
 
-        {/* Bottom Bar & Strict Compliance Notice */}
-        <div className="mt-12 pt-8 border-t border-slate-850 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+        {/* Bottom Bar */}
+        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <div>
-            © {new Date().getFullYear()} <strong className="text-slate-400">M/S ALI FOOD</strong>. All rights reserved. “Your Trusted Meat Source”.
+            © {new Date().getFullYear()} <strong className="text-slate-300">M/S ALI FOOD</strong>. All rights reserved. “Your Trusted Meat Source”.
           </div>
           <div className="flex flex-wrap items-center gap-4 text-[11px]">
             <span>Wholesale & Institutional Meat Partner</span>

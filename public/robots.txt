@@ -2,5 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /client
+Disallow: /client/*
 
 Sitemap: https://alifoodbd.com/sitemap.xml
